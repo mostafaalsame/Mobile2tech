@@ -44,6 +44,8 @@ class JsLibrariesAudit extends Audit {
   static audit(artifacts) {
     const libDetails = artifacts.Stacks
       .filter(stack => stack.detector === 'js')
+      // Don't show the fast paths in the table. `react-path` is a typo in js-library-detector.
+      .filter(stack => !stack.id.endsWith('-fast') && stack.id !== 'react-path')
       .map(stack => ({
         name: stack.name,
         version: stack.version,
@@ -57,9 +59,22 @@ class JsLibrariesAudit extends Audit {
     ];
     const details = Audit.makeTableDetails(headings, libDetails, {});
 
+    const debugData = {
+      type: /** @type {'debugdata'} */ ('debugdata'),
+      stacks: artifacts.Stacks.map(stack => {
+        /** @type {Record<string, string>} */
+        const data = {id: stack.id};
+        if (stack.version) data.version = stack.version;
+        return data;
+      }),
+    };
+
     return {
       score: 1, // Always pass for now.
-      details,
+      details: {
+        ...details,
+        debugData,
+      },
     };
   }
 }
